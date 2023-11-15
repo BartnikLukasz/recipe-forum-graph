@@ -1,0 +1,31 @@
+services:
+  neo4jdb:
+    image: neo4j:5.13
+    restart: unless-stopped
+    env_file: ./.env
+    ports:
+      - $NEO4J_LOCAL_PORT:$NEO4J_DOCKER_PORT
+      - 7474:7474
+    volumes:
+      - db:/var/lib/neo4j
+#  app:
+#    depends_on:
+#      - neo4jdb
+#    build: .
+#    restart: on-failure
+#    env_file: ./.env
+#    ports:
+#      - $SPRING_LOCAL_PORT:$SPRING_DOCKER_PORT
+#    environment:
+#      SPRING_APPLICATION_JSON: '{
+#        "spring.neo4j.uri"  : "neo4j://localhost:$NEO4J_DOCKER_PORT/$NEO4J_DATABASE",
+#        "spring.datasource.username" : "$NEO4J_USER",
+#        "spring.datasource.password" : "$NEO4J_ROOT_PASSWORD",
+#      }'
+#    volumes:
+#      - .m2:/root/.m2
+#    stdin_open: true
+#    tty: true
+
+volumes:
+  db:
