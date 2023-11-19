@@ -3,7 +3,6 @@ package bartnik.master.app.graph.recipeforum.service;
 import bartnik.master.app.graph.recipeforum.repository.CustomUserRepository;
 import bartnik.master.app.graph.recipeforum.model.CustomUser;
 import bartnik.master.app.graph.recipeforum.model.Recipe;
-import bartnik.master.app.graph.recipeforum.repository.RecipeRepository;
 import bartnik.master.app.graph.recipeforum.util.UserUtil;
 import lombok.AllArgsConstructor;
 import org.neo4j.driver.internal.value.NodeValue;
@@ -18,21 +17,6 @@ import java.util.*;
 public class UserService {
 
     private final CustomUserRepository customUserRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
-
-    public CustomUser create(CustomUser user) {
-        return customUserRepository.save(user);
-    }
-
-    public CustomUser addUser() {
-        CustomUser user = CustomUser.builder()
-                .username("user_admin")
-                .password(passwordEncoder.encode("password"))
-                .emailAddress("user@example.com")
-                .authorities("ROLE_ADMIN")
-                .build();
-        return create(user);
-    }
 
     public Set<Recipe> getRecommendations(Integer size) {
         var currentUser = UserUtil.getCurrentUser();

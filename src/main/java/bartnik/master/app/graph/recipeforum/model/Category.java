@@ -17,6 +17,7 @@ import static org.springframework.data.neo4j.core.schema.Relationship.Direction.
 @Getter
 @Setter
 @RequiredArgsConstructor
+@EqualsAndHashCode
 @Builder
 @AllArgsConstructor
 @Label("Category")
@@ -31,5 +32,7 @@ public class Category {
     private String name;
 
     @Relationship(value = "BELONGS_TO_CATEGORY", direction = INCOMING)
+    @Builder.Default
+    @EqualsAndHashCode.Exclude
     private Set<Recipe> recipes = new HashSet<>();
 }

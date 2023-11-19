@@ -1,12 +1,10 @@
 package bartnik.master.app.graph.recipeforum.service;
 
-import bartnik.master.app.graph.recipeforum.repository.CustomUserRepository;
 import bartnik.master.app.graph.recipeforum.repository.ProductCategoryRepository;
 import bartnik.master.app.graph.recipeforum.repository.ProductRepository;
 import bartnik.master.app.graph.recipeforum.dto.request.CreateProductRequest;
 import bartnik.master.app.graph.recipeforum.dto.request.UpdateProductRequest;
 import bartnik.master.app.graph.recipeforum.model.Product;
-import bartnik.master.app.graph.recipeforum.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +15,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProductService {
 
-    private final CustomUserRepository userRepository;
     private final ProductCategoryRepository productCategoryRepository;
     private final ProductRepository productRepository;
 
@@ -57,8 +54,6 @@ public class ProductService {
     }
 
     public void deleteProduct(UUID id) {
-        var product = productRepository.getById(id);
-
         productRepository.deleteById(id);
     }
 }

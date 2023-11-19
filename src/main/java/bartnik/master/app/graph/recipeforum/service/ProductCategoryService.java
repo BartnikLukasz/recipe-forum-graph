@@ -1,6 +1,5 @@
 package bartnik.master.app.graph.recipeforum.service;
 
-import bartnik.master.app.graph.recipeforum.repository.CustomUserRepository;
 import bartnik.master.app.graph.recipeforum.repository.ProductCategoryRepository;
 import bartnik.master.app.graph.recipeforum.dto.request.CreateProductCategoryRequest;
 import bartnik.master.app.graph.recipeforum.dto.request.UpdateProductCategoryRequest;
@@ -15,7 +14,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProductCategoryService {
 
-    private final CustomUserRepository userRepository;
     private final ProductCategoryRepository productCategoryRepository;
 
     public ProductCategory createProductCategory(CreateProductCategoryRequest request) {

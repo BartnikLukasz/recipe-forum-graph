@@ -51,8 +51,11 @@ public class RecipeService {
 
     public Page<Recipe> findRecipes(RecipesFilterRequest filter) {
         Pageable pageable = PageRequest.of(filter.getPageNumber(), filter.getPageSize(), Sort.by(filter.getSortBy()));
-        //return recipeRepository.findAll(buildPredicate(filter), pageable);
-        return recipeRepository.findAll(pageable);
+        String sortProperty = pageable.getSort().isSorted() ? pageable.getSort().get().findFirst().get().getProperty() : "numberOfLikes";
+        int skip = pageable.getPageNumber() * pageable.getPageSize();
+        int limit = pageable.getPageSize();
+        return recipeRepository.findAllFiltered(filter.getUserId(), filter.getTitleContains(), filter.getContentContains(),
+                filter.getIngredientsContains(), filter.getTagsContains(), filter.getCategoryIds(), "r."+sortProperty, skip, limit, pageable);
     }
 
     public Recipe updateRecipe(UUID id, UpdateRecipeRequest request) {
@@ -119,19 +122,4 @@ public class RecipeService {
         }
         return recipeRepository.save(recipe);
     }
-
-//    private Predicate buildPredicate(RecipesFilterRequest filter) {
-//        var booleanBuilder = new BooleanBuilder();
-//
-//        Optional.ofNullable(filter.getUserId()).ifPresent(userId -> booleanBuilder.and(recipe.user.id.eq(userId)));
-//        Optional.ofNullable(filter.getTitleContains()).ifPresent(titleContains -> booleanBuilder.and(recipe.title.contains(titleContains)));
-//        Optional.ofNullable(filter.getContentContains()).ifPresent(contentContains -> booleanBuilder.and(recipe.content.contains(contentContains)));
-//        Optional.ofNullable(filter.getIngredientsContains()).ifPresent(ingredientsContains -> booleanBuilder.and(recipe.ingredients.contains(ingredientsContains)));
-//        Optional.ofNullable(filter.getTagsContains()).ifPresent(tagsContains -> booleanBuilder.and(recipe.tags.contains(tagsContains)));
-//        if (!filter.getCategoryIds().isEmpty()) {
-//            booleanBuilder.and(recipe.category.id.in(filter.getCategoryIds()));
-//        }
-//
-//        return booleanBuilder;
-//    }
 }

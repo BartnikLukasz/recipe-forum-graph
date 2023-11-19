@@ -12,17 +12,18 @@ import bartnik.master.app.graph.recipeforum.model.Order;
 import bartnik.master.app.graph.recipeforum.util.UserUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.collections4.IteratorUtils;
-import org.neo4j.cypherdsl.core.Expression;
+import org.neo4j.cypherdsl.core.Conditions;
 import org.neo4j.cypherdsl.core.ResultStatement;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static bartnik.master.app.graph.recipeforum.model.enums.RelationshipTypes.ORDERED;
+import static bartnik.master.app.graph.recipeforum.model.enums.RelationshipTypes.*;
 import static org.neo4j.cypherdsl.core.Conditions.not;
 import static org.neo4j.cypherdsl.core.Cypher.*;
 
@@ -71,12 +72,13 @@ public class OrderService {
     }
 
     public List<Order> generateReport(OrderReportRequest request) {
-        return orderRepository.findAll(buildPredicate(request)).stream().toList();
+        Set<UUID> orderIds = orderRepository.findAll(buildPredicate(request)).stream().map(Order::getId).collect(Collectors.toSet());
+        return orderRepository.findAllById(orderIds).stream().toList();
     }
 
     public List<LineItem> generateProductReport(OrderProductReportRequest request) {
-//        return IteratorUtils.toList(lineItemRepository.findAll(buildProductPredicate(request)).iterator());
-        return lineItemRepository.findAll();
+        Set<UUID> lineItemsIds = lineItemRepository.findAll(buildProductPredicate(request)).stream().map(LineItem::getId).collect(Collectors.toSet());
+        return lineItemRepository.findAllById(lineItemsIds).stream().toList();
 
     }
 
@@ -84,45 +86,86 @@ public class OrderService {
         var order = node("Order").named("o");
         var user = node("CustomUser").named("u");
 
-        var dateCondition = order.property("orderDate").gt(literalOf(request.getFrom().atStartOfDay()))
+        var condition = order.property("orderDate").gt(literalOf(request.getFrom().atStartOfDay()))
                 .and(order.property("orderDate").lt(literalOf(request.getTo().plusDays(1).atStartOfDay())));
 
-        var statement = match(order)
-                .where(dateCondition);
+        var statement = match(user.relationshipTo(order, ORDERED.name()));
 
         if (!request.getUserIds().isEmpty()) {
-            statement = statement.match(order.relationshipTo(user, ORDERED.name())).where(user.property("id").in(literalOf(request.getUserIds().toString())));
+            var tempCondition = Conditions.noCondition();
+            for (UUID id : request.getUserIds()) {
+                tempCondition = tempCondition.or(user.property("id").eq(literalOf(id.toString())));
+            }
+            condition = condition.and(tempCondition);
         }
         if (!request.getExcludedUserIds().isEmpty()) {
-            statement = statement.match(order.relationshipTo(user, ORDERED.name())).where(not(user.property("id").in(literalOf(request.getExcludedUserIds()))));
+            var tempCondition = Conditions.noCondition();
+            for (UUID id : request.getExcludedUserIds()) {
+                tempCondition = tempCondition.and(not(user.property("id").eq(literalOf(id.toString()))));
+            }
+            condition = condition.and(tempCondition);
         }
 
-        return statement.returning(order).build();
+        return statement.where(condition).returning(order).build();
     }
-//
-//    private BooleanBuilder buildProductPredicate(OrderProductReportRequest request) {
-//        var booleanBuilder = new BooleanBuilder();
-//        booleanBuilder.and(lineItem.order.orderDate.after(request.getFrom().atStartOfDay())
-//                .and((lineItem.order.orderDate.before(request.getTo().plusDays(1).atStartOfDay()))));
-//
-//        if (!request.getUserIds().isEmpty()) {
-//            booleanBuilder.and(lineItem.order.user.id.in(request.getUserIds()));
-//        }
-//        if (!request.getExcludedUserIds().isEmpty()) {
-//            booleanBuilder.and(lineItem.order.user.id.notIn(request.getExcludedUserIds()));
-//        }
-//        if (!request.getProductIds().isEmpty()) {
-//            booleanBuilder.and(lineItem.product.id.in(request.getProductIds()));
-//        }
-//        if (!request.getExcludedProductIds().isEmpty()) {
-//            booleanBuilder.and(lineItem.product.id.notIn(request.getExcludedProductIds()));
-//        }
-//        if (!request.getProductCategoriesIds().isEmpty()) {
-//            booleanBuilder.and(lineItem.product.productCategory.id.in(request.getProductCategoriesIds()));
-//        }
-//        if (!request.getExcludedProductCategoriesIds().isEmpty()) {
-//            booleanBuilder.and(lineItem.product.productCategory.id.notIn(request.getExcludedProductCategoriesIds()));
-//        }
-//        return booleanBuilder;
-//    }
+
+    private ResultStatement buildProductPredicate(OrderProductReportRequest request) {
+        var order = node("Order").named("o");
+        var user = node("CustomUser").named("u");
+        var lineItem = node("LineItem").named("l");
+        var product = node("Product").named("p");
+        var productCategory = node("ProductCategory").named("pc");
+
+        var condition = order.property("orderDate").gt(literalOf(request.getFrom().atStartOfDay()))
+                .and(order.property("orderDate").lt(literalOf(request.getTo().plusDays(1).atStartOfDay())));
+
+        var statement = match(user.relationshipTo(order, ORDERED.name())
+                .relationshipFrom(lineItem, BELONGS_TO_ORDER.name())
+                .relationshipFrom(product, BELONGS_TO_ITEM.name())
+                .relationshipTo(productCategory, BELONGS_TO_PRODUCT_CATEGORY.name()));
+
+        if (!request.getUserIds().isEmpty()) {
+            var tempCondition = Conditions.noCondition();
+            for (UUID id : request.getUserIds()) {
+                tempCondition = tempCondition.or(user.property("id").eq(literalOf(id.toString())));
+            }
+            condition = condition.and(tempCondition);
+        }
+        if (!request.getExcludedUserIds().isEmpty()) {
+            var tempCondition = Conditions.noCondition();
+            for (UUID id : request.getExcludedUserIds()) {
+                tempCondition = tempCondition.and(not(user.property("id").eq(literalOf(id.toString()))));
+            }
+            condition = condition.and(tempCondition);
+        }
+        if (!request.getProductIds().isEmpty()) {
+            var tempCondition = Conditions.noCondition();
+            for (UUID id : request.getProductIds()) {
+                tempCondition = tempCondition.or(product.property("id").eq(literalOf(id.toString())));
+            }
+            condition = condition.and(tempCondition);
+        }
+        if (!request.getExcludedProductIds().isEmpty()) {
+            var tempCondition = Conditions.noCondition();
+            for (UUID id : request.getExcludedProductIds()) {
+                tempCondition = tempCondition.and(not(product.property("id").eq(literalOf(id.toString()))));
+            }
+            condition = condition.and(tempCondition);
+        }
+        if (!request.getProductCategoriesIds().isEmpty()) {
+            var tempCondition = Conditions.noCondition();
+            for (UUID id : request.getProductCategoriesIds()) {
+                tempCondition = tempCondition.or(productCategory.property("id").eq(literalOf(id.toString())));
+            }
+            condition = condition.and(tempCondition);
+        }
+        if (!request.getExcludedProductCategoriesIds().isEmpty()) {
+            var tempCondition = Conditions.noCondition();
+            for (UUID id : request.getExcludedProductCategoriesIds()) {
+                tempCondition = tempCondition.or(not(productCategory.property("id").eq(literalOf(id.toString()))));
+            }
+            condition = condition.and(tempCondition);
+        }
+        return statement.where(condition).returning(lineItem).build();
+    }
 }
