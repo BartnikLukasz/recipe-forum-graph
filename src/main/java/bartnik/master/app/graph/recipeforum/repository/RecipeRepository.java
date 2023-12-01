@@ -50,7 +50,7 @@ public interface RecipeRepository extends Neo4jRepository<Recipe, UUID>, Cypherd
             "AND ($tagsContains IS NULL OR r.tags CONTAINS $tagsContains) " +
             "AND (size($categoryIds) = 0 OR c.id IN $categoryIds) " +
             "RETURN r " +
-            "ORDER BY $sortProperty DESC, elementId(r) ASC " +
+            "ORDER BY $sortProperty, elementId(r) ASC " +
             "SKIP $skip LIMIT $limit",
             countQuery = "MATCH (r:Recipe) " +
             "OPTIONAL MATCH (r)-[:BELONGS_TO_CATEGORY]->(c:Category) " +

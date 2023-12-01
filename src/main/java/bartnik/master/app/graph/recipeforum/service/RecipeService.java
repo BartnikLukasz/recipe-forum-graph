@@ -50,8 +50,8 @@ public class RecipeService {
     }
 
     public Page<Recipe> findRecipes(RecipesFilterRequest filter) {
-        Pageable pageable = PageRequest.of(filter.getPageNumber(), filter.getPageSize(), Sort.by(filter.getSortBy()));
-        String sortProperty = pageable.getSort().isSorted() ? pageable.getSort().get().findFirst().get().getProperty() : "numberOfLikes";
+        Pageable pageable = PageRequest.of(filter.getPageNumber(), filter.getPageSize(), Sort.by(Sort.Direction.valueOf(filter.getDirection()), filter.getSortBy()));
+        String sortProperty = pageable.getSort().isSorted() ? pageable.getSort().get().findFirst().get().getProperty() + " " + pageable.getSort().get().findFirst().get().getDirection().name() : "numberOfLikes DESC";
         int skip = pageable.getPageNumber() * pageable.getPageSize();
         int limit = pageable.getPageSize();
         return recipeRepository.findAllFiltered(filter.getUserId(), filter.getTitleContains(), filter.getContentContains(),
