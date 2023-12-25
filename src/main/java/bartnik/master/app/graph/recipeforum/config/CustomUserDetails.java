@@ -1,6 +1,7 @@
 package bartnik.master.app.graph.recipeforum.config;
 
 import bartnik.master.app.graph.recipeforum.model.CustomUser;
+import bartnik.master.app.graph.recipeforum.model.projections.CustomUserGet;
 import lombok.ToString;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -23,6 +24,14 @@ public class CustomUserDetails implements UserDetails {
         name=customUser.getUsername();
         password=customUser.getPassword();
         authorities= Arrays.stream(customUser.getAuthorities().split(","))
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+    }
+
+    public CustomUserDetails(CustomUserGet customUserGet) {
+        name = customUserGet.getUsername();
+        password = customUserGet.getPassword();
+        authorities = Arrays.stream(customUserGet.getAuthorities().split(","))
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }

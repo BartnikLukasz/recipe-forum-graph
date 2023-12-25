@@ -1,6 +1,7 @@
 package bartnik.master.app.graph.recipeforum.repository;
 
 import bartnik.master.app.graph.recipeforum.model.CustomUser;
+import bartnik.master.app.graph.recipeforum.model.projections.CustomUserGet;
 import bartnik.master.app.graph.recipeforum.model.Recipe;
 import org.neo4j.driver.internal.value.NodeValue;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
@@ -13,9 +14,17 @@ import java.util.*;
 
 @Repository
 public interface CustomUserRepository extends Neo4jRepository<CustomUser, UUID>, CypherdslStatementExecutor<Recipe> {
+
     Optional<CustomUser> findByUsername(String username);
+
+    Optional<CustomUserGet> findReadOnlyByUsername(String username);
+
     default CustomUser getByUsername(String username) {
         return findByUsername(username).orElseThrow();
+    }
+
+    default CustomUserGet getByUsernameReadOnly(String username) {
+        return findReadOnlyByUsername(username).orElseThrow();
     }
 
     default CustomUser getById(UUID id){

@@ -20,7 +20,7 @@ public class UserService {
 
     public Set<Recipe> getRecommendations(Integer size) {
         var currentUser = UserUtil.getCurrentUser();
-        var user = customUserRepository.getByUsername(currentUser.getUsername());
+        var user = customUserRepository.getByUsernameReadOnly(currentUser.getUsername());
         var recommendations = customUserRepository.getRecommendations(size, user.getId().toString());
         return mapRecommendations(recommendations);
     }

@@ -1,7 +1,7 @@
 package bartnik.master.app.graph.recipeforum.config;
 
+import bartnik.master.app.graph.recipeforum.model.projections.CustomUserGet;
 import bartnik.master.app.graph.recipeforum.repository.CustomUserRepository;
-import bartnik.master.app.graph.recipeforum.model.CustomUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -18,7 +18,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<CustomUser> userInfo = repository.findByUsername(username);
+        Optional<CustomUserGet> userInfo = repository.findReadOnlyByUsername(username);
         return userInfo.map(CustomUserDetails::new)
                 .orElseThrow(() -> new UsernameNotFoundException("user not found " + username));
 
