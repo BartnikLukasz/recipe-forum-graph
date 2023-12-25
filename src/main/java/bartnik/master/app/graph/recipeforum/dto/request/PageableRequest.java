@@ -14,4 +14,5 @@ public class PageableRequest {
     int pageNumber;
     int pageSize;
     String sortBy;
+    String direction;
 }

@@ -2,7 +2,6 @@ services:
   neo4jdb:
     image: neo4j:5.13
     restart: unless-stopped
-    env_file: ./.env
     ports:
       - 7687:7687
       - 7474:7474
