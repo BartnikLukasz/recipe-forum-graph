@@ -1,10 +1,7 @@
 package bartnik.master.app.graph.recipeforum.service;
 
 import bartnik.master.app.graph.recipeforum.dto.request.OrderReportRequest;
-import bartnik.master.app.graph.recipeforum.repository.CustomUserRepository;
-import bartnik.master.app.graph.recipeforum.repository.LineItemRepository;
-import bartnik.master.app.graph.recipeforum.repository.OrderRepository;
-import bartnik.master.app.graph.recipeforum.repository.ProductRepository;
+import bartnik.master.app.graph.recipeforum.repository.*;
 import bartnik.master.app.graph.recipeforum.dto.request.OrderProductReportRequest;
 import bartnik.master.app.graph.recipeforum.dto.request.OrderProductsRequest;
 import bartnik.master.app.graph.recipeforum.model.LineItem;
@@ -18,9 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -32,24 +27,41 @@ import static org.neo4j.cypherdsl.core.Cypher.*;
 @RequiredArgsConstructor
 public class OrderService {
 
+    private static final String USER = "CustomUser";
+    private static final String PRODUCT = "Product";
+    private static final String PRODUCT_CATEGORY = "ProductCategory";
     private final OrderRepository orderRepository;
     private final LineItemRepository lineItemRepository;
     private final ProductRepository productRepository;
     private final CustomUserRepository userRepository;
+    private final ProductCategoryRepository productCategoryRepository;
 
     @Transactional
     public void orderProducts(OrderProductsRequest request) {
         var currentUser = UserUtil.getCurrentUser();
-        var user = userRepository.getByUsername(currentUser.getUsername());
+        var u = node(USER).named("u");
+        var p = node(PRODUCT).named("p");
+        var pc = node(PRODUCT_CATEGORY).named("pc");
+        var belongsToProductCategory = p.relationshipTo(pc, BELONGS_TO_PRODUCT_CATEGORY.name());
+
+        var user = userRepository.findOne(match(u)
+                .where(u.property("username").eq(anonParameter(currentUser.getUsername())))
+                .returning(u)
+                .build()).orElseThrow();
 
         List<LineItem> items = request.getLineItems().stream()
                 .map(lineItem -> {
-            var product = productRepository.getById(lineItem.getProductId());
+            var product = productRepository.findOne(match(p)
+                    .where(p.property("id").eq(anonParameter(lineItem.getProductId().toString())))
+                    .returning(p).build()).orElseThrow();
+            var productCategory = productCategoryRepository.findOne(match(belongsToProductCategory)
+                    .where(p.property("id").eq(anonParameter(lineItem.getProductId().toString())))
+                    .returning(pc).build()).orElseThrow();
+            product.setProductCategory(productCategory);
             if (product.getAvailability() < lineItem.getQuantity()) {
                 return null;
             }
             product.setAvailability(product.getAvailability() - lineItem.getQuantity());
-            productRepository.save(product);
             return LineItem.builder()
                     .product(product)
                     .quantity(lineItem.getQuantity())
@@ -77,9 +89,7 @@ public class OrderService {
     }
 
     public List<LineItem> generateProductReport(OrderProductReportRequest request) {
-        Set<UUID> lineItemsIds = lineItemRepository.findAll(buildProductPredicate(request)).stream().map(LineItem::getId).collect(Collectors.toSet());
-        return lineItemRepository.findAllById(lineItemsIds).stream().toList();
-
+        return lineItemRepository.findAll(buildProductPredicate(request)).stream().toList();
     }
 
     private ResultStatement buildPredicate(OrderReportRequest request) {
@@ -116,8 +126,8 @@ public class OrderService {
         var product = node("Product").named("p");
         var productCategory = node("ProductCategory").named("pc");
 
-        var condition = order.property("orderDate").gt(literalOf(request.getFrom().atStartOfDay()))
-                .and(order.property("orderDate").lt(literalOf(request.getTo().plusDays(1).atStartOfDay())));
+        var condition = order.property("orderDate").gt(literalOf(request.getFrom()))
+                .and(order.property("orderDate").lt(literalOf(request.getTo().plusDays(1))));
 
         var statement = match(user.relationshipTo(order, ORDERED.name())
                 .relationshipFrom(lineItem, BELONGS_TO_ORDER.name())
