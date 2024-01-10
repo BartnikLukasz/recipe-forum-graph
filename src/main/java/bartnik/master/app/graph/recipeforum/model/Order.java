@@ -8,6 +8,7 @@ import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Relationship;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -35,5 +36,5 @@ public class Order {
 
     private BigDecimal value;
 
-    private LocalDateTime orderDate;
+    private LocalDate orderDate;
 }

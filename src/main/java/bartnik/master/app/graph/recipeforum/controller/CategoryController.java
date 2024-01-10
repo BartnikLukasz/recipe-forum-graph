@@ -29,7 +29,7 @@ public class CategoryController {
 
     @PutMapping("/{id}")
     public ResponseEntity<CategoryLiteResponse> updateCategory(@PathVariable UUID id, @RequestBody @Validated UpdateCategoryRequest request) {
-        return ResponseEntity.ok(mapper.map(categoryService.updateCategory(id, request)));
+        return ResponseEntity.ok(mapper.mapLite(categoryService.updateCategory(id, request)));
     }
 
     @DeleteMapping("/{id}")

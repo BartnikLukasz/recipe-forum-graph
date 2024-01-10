@@ -4,6 +4,7 @@ import bartnik.master.app.graph.recipeforum.dto.response.RecipeDetailsResponse;
 import bartnik.master.app.graph.recipeforum.dto.response.RecipeLiteResponse;
 import bartnik.master.app.graph.recipeforum.dto.response.RecipeResponse;
 import bartnik.master.app.graph.recipeforum.model.Recipe;
+import bartnik.master.app.graph.recipeforum.model.projections.RecipeLiteGet;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
@@ -21,7 +22,7 @@ public interface RecipeMapper {
 
     RecipeResponse map(Recipe recipe);
 
-    RecipeLiteResponse mapLite(Recipe recipe);
+    RecipeLiteResponse mapLite(RecipeLiteGet recipe);
 
     @Mapping(target = "comments", qualifiedByName = "commentList")
     @Mapping(target = "category", qualifiedByName = "categoryLite")
@@ -33,13 +34,7 @@ public interface RecipeMapper {
                 .toList();
     }
 
-    default List<RecipeLiteResponse> mapLite(Set<Recipe> recipes) {
-        return recipes.stream()
-                .map(this::mapLite)
-                .toList();
-    }
-
-    default Page<RecipeLiteResponse> mapPage(Page<Recipe> recipe) {
+    default Page<RecipeLiteResponse> mapPage(Page<RecipeLiteGet> recipe) {
         return recipe.map(this::mapLite);
     }
 }

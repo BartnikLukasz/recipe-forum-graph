@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.util.*;
 
 @Repository
-public interface CustomUserRepository extends Neo4jRepository<CustomUser, UUID>, CypherdslStatementExecutor<Recipe> {
+public interface CustomUserRepository extends Neo4jRepository<CustomUser, UUID>, CypherdslStatementExecutor<CustomUser> {
 
     Optional<CustomUser> findByUsername(String username);
 

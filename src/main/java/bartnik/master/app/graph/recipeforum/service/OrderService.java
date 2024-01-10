@@ -17,6 +17,7 @@ import org.neo4j.cypherdsl.core.ResultStatement;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -63,7 +64,7 @@ public class OrderService {
                 .value(items.stream().map(
                         item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                         .reduce(BigDecimal.ZERO, BigDecimal::add))
-                .orderDate(LocalDateTime.now())
+                .orderDate(LocalDate.now())
                 .build();
 
         items.forEach(item -> item.setOrder(order));
@@ -72,8 +73,7 @@ public class OrderService {
     }
 
     public List<Order> generateReport(OrderReportRequest request) {
-        Set<UUID> orderIds = orderRepository.findAll(buildPredicate(request)).stream().map(Order::getId).collect(Collectors.toSet());
-        return orderRepository.findAllById(orderIds).stream().toList();
+        return orderRepository.findAll(buildPredicate(request)).stream().toList();
     }
 
     public List<LineItem> generateProductReport(OrderProductReportRequest request) {
@@ -86,8 +86,8 @@ public class OrderService {
         var order = node("Order").named("o");
         var user = node("CustomUser").named("u");
 
-        var condition = order.property("orderDate").gt(literalOf(request.getFrom().atStartOfDay()))
-                .and(order.property("orderDate").lt(literalOf(request.getTo().plusDays(1).atStartOfDay())));
+        var condition = order.property("orderDate").gt(literalOf(request.getFrom()))
+                .and(order.property("orderDate").lt(literalOf(request.getTo().plusDays(1))));
 
         var statement = match(user.relationshipTo(order, ORDERED.name()));
 

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RequiredArgsConstructor
 @RestController
@@ -15,10 +16,9 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
-    private final RecipeMapper recipeMapper;
 
     @GetMapping("/recommendations")
-    public ResponseEntity<List<RecipeLiteResponse>> getRecommendations(@RequestParam("size") Integer size) {
-        return ResponseEntity.ok(recipeMapper.mapLite(userService.getRecommendations(size)));
+    public ResponseEntity<Set<RecipeLiteResponse>> getRecommendations(@RequestParam("size") Integer size) {
+        return ResponseEntity.ok(userService.getRecommendations(size));
     }
 }
