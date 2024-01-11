@@ -1,17 +1,12 @@
 package bartnik.master.app.graph.recipeforum.service;
 
 import bartnik.master.app.graph.recipeforum.dto.response.RecipeLiteResponse;
-import bartnik.master.app.graph.recipeforum.model.projections.RecipeLiteGet;
 import bartnik.master.app.graph.recipeforum.repository.CustomUserRepository;
-import bartnik.master.app.graph.recipeforum.model.CustomUser;
-import bartnik.master.app.graph.recipeforum.model.Recipe;
 import bartnik.master.app.graph.recipeforum.util.UserUtil;
 import lombok.AllArgsConstructor;
 import org.neo4j.driver.internal.value.NodeValue;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.*;
 
 @AllArgsConstructor
@@ -23,6 +18,7 @@ public class UserService {
     public Set<RecipeLiteResponse> getRecommendations(Integer size) {
         var currentUser = UserUtil.getCurrentUser();
         var user = customUserRepository.getByUsernameReadOnly(currentUser.getUsername());
+
         var recommendations = customUserRepository.getRecommendations(size, user.getId().toString());
         return mapRecommendations(recommendations);
     }
