@@ -1,6 +1,8 @@
 package bartnik.master.app.graph.recipeforum.service;
 
 import bartnik.master.app.graph.recipeforum.dto.request.OrderReportRequest;
+import bartnik.master.app.graph.recipeforum.model.CustomUser;
+import bartnik.master.app.graph.recipeforum.model.Product;
 import bartnik.master.app.graph.recipeforum.repository.*;
 import bartnik.master.app.graph.recipeforum.dto.request.OrderProductReportRequest;
 import bartnik.master.app.graph.recipeforum.dto.request.OrderProductsRequest;
@@ -85,11 +87,45 @@ public class OrderService {
     }
 
     public List<Order> generateReport(OrderReportRequest request) {
-        return orderRepository.findAll(buildPredicate(request)).stream().toList();
+        var orders = orderRepository.findAll(buildPredicate(request)).stream().toList();
+        var order = node("Order").named("o");
+        var lineItem = node("LineItem").named("l");
+        var product = node("Product").named("p");
+        var user = node("CustomUser").named("u");
+        orders.forEach(o -> {
+            var statement = match(order.relationshipFrom(lineItem, BELONGS_TO_ORDER.name()))
+                    .where(order.property("id").eq(literalOf(o.getId().toString())))
+                    .returning(lineItem).build();
+            var lineItems = lineItemRepository.findAll(statement).stream().toList();
+            lineItems.forEach(l -> {
+                var lStatement = match(lineItem.relationshipFrom(product, BELONGS_TO_ITEM.name()))
+                        .where(lineItem.property("id").eq(literalOf(l.getId().toString())))
+                        .returning(product.property("name")).build();
+                var productName = productRepository.findOne(lStatement, String.class).get();
+                l.setProduct(Product.builder().name(productName).build());
+            });
+            o.setItems(lineItems);
+
+            var userStatement = match(order.relationshipFrom(user, ORDERED.name()))
+                    .where(order.property("id").eq(literalOf(o.getId().toString())))
+                    .returning(user.property("username")).build();
+            o.setUser(CustomUser.builder().username(userRepository.findOne(userStatement, String.class).get()).build());
+        });
+        return orders;
     }
 
     public List<LineItem> generateProductReport(OrderProductReportRequest request) {
-        return lineItemRepository.findAll(buildProductPredicate(request)).stream().toList();
+        var lineItem = node("LineItem").named("l");
+        var product = node("Product").named("p");
+        var lineItems = lineItemRepository.findAll(buildProductPredicate(request)).stream().toList();
+        lineItems.forEach(l -> {
+            var lStatement = match(lineItem.relationshipFrom(product, BELONGS_TO_ITEM.name()))
+                    .where(lineItem.property("id").eq(literalOf(l.getId().toString())))
+                    .returning(product).build();
+            var p = productRepository.findOne(lStatement).get();
+            l.setProduct(p);
+        });
+        return lineItems;
     }
 
     private ResultStatement buildPredicate(OrderReportRequest request) {

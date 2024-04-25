@@ -1,8 +1,6 @@
 package bartnik.master.app.graph.recipeforum.service;
 
 import bartnik.master.app.graph.recipeforum.dto.request.CreateRecipeRequest;
-import bartnik.master.app.graph.recipeforum.mapper.RecipeMapper;
-import bartnik.master.app.graph.recipeforum.model.enums.RelationshipTypes;
 import bartnik.master.app.graph.recipeforum.model.projections.RecipeLiteGet;
 import bartnik.master.app.graph.recipeforum.repository.CategoryRepository;
 import bartnik.master.app.graph.recipeforum.repository.CustomUserRepository;
@@ -12,7 +10,6 @@ import bartnik.master.app.graph.recipeforum.dto.request.UpdateRecipeRequest;
 import bartnik.master.app.graph.recipeforum.model.Recipe;
 import bartnik.master.app.graph.recipeforum.util.UserUtil;
 import lombok.RequiredArgsConstructor;
-import org.neo4j.cypherdsl.core.Cypher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -23,8 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-import static bartnik.master.app.graph.recipeforum.model.enums.RelationshipTypes.*;
+import static bartnik.master.app.graph.recipeforum.model.enums.RelationshipTypes.ADDED;
+import static bartnik.master.app.graph.recipeforum.model.enums.RelationshipTypes.BELONGS_TO_CATEGORY;
 import static org.neo4j.cypherdsl.core.Cypher.*;
+
+import static bartnik.master.app.graph.recipeforum.model.enums.RelationshipTypes.*;
 
 @Service
 @RequiredArgsConstructor
@@ -107,6 +107,7 @@ public class RecipeService {
         return recipeRepository.findAllFiltered(filter.getUserId(), filter.getTitleContains(), filter.getContentContains(),
                 filter.getIngredientsContains(), filter.getTagsContains(), filter.getCategoryIds(), "r."+sortProperty, skip, limit, pageable);
     }
+
     @Transactional
     public Recipe updateRecipe(UUID id, UpdateRecipeRequest request) {
         var r = node(RECIPE).named("r");
