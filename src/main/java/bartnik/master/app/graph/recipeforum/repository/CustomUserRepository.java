@@ -20,23 +20,12 @@ public interface CustomUserRepository extends Neo4jRepository<CustomUser, UUID>,
         return findReadOnlyByUsername(username).orElseThrow();
     }
 
-    @Query("MATCH (u:`CustomUser` {id: $userId})-[:`LIKED`]->(r:`Recipe`)<-[:`ADDED`]-(cu:`CustomUser`)\n" +
-            "WITH cu, u, count(*) AS RecipeCount\n" +
-            "ORDER BY RecipeCount DESC\n" +
-            "LIMIT 5\n" +
-            "WITH collect(cu.id) AS TopUsers, u\n" +
-            "MATCH (u)-[:`LIKED`]->(r:`Recipe`)-[:`BELONGS_TO_CATEGORY`]->(c:`Category`)\n" +
-            "WITH c, count(*) AS RecipeCount, TopUsers, u\n" +
-            "ORDER BY RecipeCount DESC\n" +
-            "LIMIT 3\n" +
-            "WITH collect(c.id) AS TopCategories, TopUsers, u\n" +
-            "MATCH (u)-[:`LIKED`]->(r:`Recipe`)<-[:`LIKED`]-(peer:`CustomUser`)-[:`LIKED`]->(reco:`Recipe`)<-[:`ADDED`]-(adder:`CustomUser`), (reco)-[:`BELONGS_TO_CATEGORY`]->(cat:`Category`)\n" +
-            "WHERE NOT (u)-[:`LIKED`]->(reco)\n" +
-            "WITH reco, adder, cat, count(*) * " +
-            "            CASE WHEN adder.id IN TopUsers THEN 2 ELSE 1 END *" +
-            "            CASE WHEN cat.id IN TopCategories THEN 2 ELSE 1 END AS AdjustedFrequency, TopUsers, TopCategories\n" +
-            "RETURN reco " +
-            "ORDER BY AdjustedFrequency DESC\n" +
+    @Query("MATCH (u:`CustomUser`{id: $userId})-[:`LIKED`]->(r:`Recipe`)\n" +
+            "WITH u, collect(r) as likedRecipes\n" +
+            "MATCH (u)-[:`LIKED`]->(:`Recipe`)<-[:`LIKED`]-(peer:`CustomUser`)-[:`LIKED`]->(reco:`Recipe`)\n" +
+            "WHERE NOT reco IN likedRecipes\n" +
+            "WITH reco, count(*) as Frequency\n" +
+            "RETURN reco ORDER BY Frequency DESC\n" +
             "LIMIT $size;")
     List<NodeValue> getRecommendations(@Param("size") Integer size, @Param("userId") String userId);
 }
